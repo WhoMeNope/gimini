@@ -5,13 +5,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/WhoMeNope/gimini/internal"
+
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/cache"
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
-const repoDir string = "/.gimini/.git"
+const repoDir string = "/.gimini"
+const repo string = repoDir + "/.git"
 
 func main() {
 	home, err := os.UserHomeDir()
@@ -19,8 +22,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-
-	repoPath := home + repoDir
+	repoPath := home + repo
 
 	// Init if does not exist
 	os.MkdirAll(repoPath, os.ModeDir|0777)
@@ -37,8 +39,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-
-	w, err := repo.Worktree()
+	w, err := internal.GetWorktree(repo)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -56,16 +57,12 @@ func main() {
 		// find out if it's a dir or file, if file, print info
 		if !infoX.IsDir() {
 			fmt.Printf("%v\n", pathX)
-			// fmt.Printf("  dir: 「%v」\n", filepath.Dir(pathX))
-			// fmt.Printf("  file name 「%v」\n", infoX.Name())
-			// fmt.Printf("  extenion: 「%v」\n", filepath.Ext(pathX))
 
-			_, err = w.Add(pathX)
+			hash, err := w.Add(pathX)
 			if err != nil {
-				fmt.Println(err)
 				return err
 			}
-
+			fmt.Println(hash)
 		}
 
 		return nil
