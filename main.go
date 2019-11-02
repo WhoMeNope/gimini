@@ -26,7 +26,7 @@ func main() {
 	os.MkdirAll(repoPath, os.ModeDir|0777)
 	fs := osfs.New(repoPath)
 	st := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
-	repo, err := git.Init(st, osfs.New(repoPath))
+	repo, err := git.Init(st, fs)
 	if err != nil && err != git.ErrRepositoryAlreadyExists {
 		fmt.Println(err)
 		return
