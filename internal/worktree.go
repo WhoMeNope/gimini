@@ -1,10 +1,9 @@
 package internal
 
 import (
-	"fmt"
 	"io"
 	"os"
-	"path"
+	filepath "path"
 	"syscall"
 	"time"
 
@@ -68,13 +67,13 @@ func (w *Worktree) Add(path string) (plumbing.Hash, error) {
 }
 
 func (w *Worktree) doAddDirectory(idx *index.Index, s git.Status, directory string) (added bool, err error) {
-	files, err := w.Filesystem.ReadDir(directory)
+	files, err := w.systemFilesystem.ReadDir(directory)
 	if err != nil {
 		return false, err
 	}
 
 	for _, file := range files {
-		name := path.Join(directory, file.Name())
+		name := filepath.Join(directory, file.Name())
 
 		var a bool
 		if file.IsDir() {
@@ -118,7 +117,7 @@ func (w *Worktree) doAddFile(idx *index.Index, s git.Status, path string) (added
 }
 
 func (w *Worktree) copyFileToStorage(path string) (hash plumbing.Hash, err error) {
-	fi, err := w.Filesystem.Lstat(path)
+	fi, err := w.systemFilesystem.Lstat(path)
 	if err != nil {
 		return plumbing.ZeroHash, err
 	}
@@ -148,7 +147,7 @@ func (w *Worktree) copyFileToStorage(path string) (hash plumbing.Hash, err error
 }
 
 func (w *Worktree) fillEncodedObjectFromFile(dst io.Writer, path string, fi os.FileInfo) (err error) {
-	src, err := w.Filesystem.Open(path)
+	src, err := w.systemFilesystem.Open(path)
 	if err != nil {
 		return err
 	}
@@ -163,7 +162,7 @@ func (w *Worktree) fillEncodedObjectFromFile(dst io.Writer, path string, fi os.F
 }
 
 func (w *Worktree) fillEncodedObjectFromSymlink(dst io.Writer, path string, fi os.FileInfo) error {
-	target, err := w.Filesystem.Readlink(path)
+	target, err := w.systemFilesystem.Readlink(path)
 	if err != nil {
 		return err
 	}
@@ -173,24 +172,22 @@ func (w *Worktree) fillEncodedObjectFromSymlink(dst io.Writer, path string, fi o
 }
 
 func (w *Worktree) addOrUpdateFileToIndex(idx *index.Index, filename string, h plumbing.Hash) error {
-	e, err := idx.Entry(filename)
+	repoRoot := w.Filesystem.Root()
+	repoFilename := filepath.Join(repoRoot, filename)
+
+	e, err := idx.Entry(repoFilename)
 	if err != nil && err != index.ErrEntryNotFound {
 		return err
 	}
 
 	if err == index.ErrEntryNotFound {
-		return w.doAddFileToIndex(idx, filename, h)
+		return w.doUpdateFileToIndex(idx.Add(repoFilename), filename, h)
 	}
-
 	return w.doUpdateFileToIndex(e, filename, h)
 }
 
-func (w *Worktree) doAddFileToIndex(idx *index.Index, filename string, h plumbing.Hash) error {
-	return w.doUpdateFileToIndex(idx.Add(filename), filename, h)
-}
-
 func (w *Worktree) doUpdateFileToIndex(e *index.Entry, filename string, h plumbing.Hash) error {
-	info, err := w.Filesystem.Lstat(filename)
+	info, err := w.systemFilesystem.Lstat(filename)
 	if err != nil {
 		return err
 	}
@@ -211,7 +208,10 @@ func (w *Worktree) doUpdateFileToIndex(e *index.Entry, filename string, h plumbi
 }
 
 func (w *Worktree) deleteFromIndex(idx *index.Index, path string) (plumbing.Hash, error) {
-	e, err := idx.Remove(path)
+	repoRoot := w.Filesystem.Root()
+	repoPath := filepath.Join(repoRoot, path)
+
+	e, err := idx.Remove(repoPath)
 	if err != nil {
 		return plumbing.ZeroHash, err
 	}
