@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/WhoMeNope/gimini/internal"
 
@@ -45,33 +44,12 @@ func main() {
 		return
 	}
 
-	// Walk through the dir
-	var ff = func(pathX string, infoX os.FileInfo, errX error) error {
-
-		// first thing to do, check error. and decide what to do about it
-		if errX != nil {
-			fmt.Printf("error 「%v」 at a path 「%q」\n", errX, pathX)
-			return errX
-		}
-
-		// find out if it's a dir or file, if file, print info
-		if !infoX.IsDir() {
-			fmt.Printf("%v\n", pathX)
-
-			hash, err := w.Add(pathX)
-			if err != nil {
-				return err
-			}
-			fmt.Println(hash)
-		}
-
-		return nil
-	}
-	err = filepath.Walk(os.Args[1], ff)
+	hash, err := w.Add(os.Args[1])
 	if err != nil {
-		fmt.Printf("error walking the path %q: %v\n", os.Args[1], err)
+		fmt.Println(err)
 		return
 	}
+	fmt.Println(hash)
 
 	status, err := w.Status()
 	if err != nil {
