@@ -12,8 +12,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
-const repoDir string = "/.gimini"
-const repo string = repoDir + "/.git"
+const repo string = "/.gimini"
 
 func main() {
 	home, err := os.UserHomeDir()

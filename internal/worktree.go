@@ -1,11 +1,15 @@
 package internal
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"syscall"
 	"time"
+
+	"gopkg.in/src-d/go-billy.v4"
+	"gopkg.in/src-d/go-billy.v4/osfs"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -16,16 +20,19 @@ import (
 
 type Worktree struct {
 	*git.Worktree
-	repo *git.Repository
+	repo             *git.Repository
+	systemFilesystem billy.Filesystem
 }
 
 func GetWorktree(repo *git.Repository) (Worktree, error) {
+	fs := osfs.New("/")
+
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return Worktree{nil, repo}, err
+		return Worktree{nil, repo, fs}, err
 	}
 
-	return Worktree{worktree, repo}, nil
+	return Worktree{worktree, repo, fs}, nil
 }
 
 func (w *Worktree) Add(path string) (plumbing.Hash, error) {
@@ -42,7 +49,7 @@ func (w *Worktree) Add(path string) (plumbing.Hash, error) {
 	var h plumbing.Hash
 	var added bool
 
-	fi, err := w.Filesystem.Lstat(path)
+	fi, err := w.systemFilesystem.Lstat(path)
 	if err != nil || !fi.IsDir() {
 		added, h, err = w.doAddFile(idx, s, path)
 	} else {
