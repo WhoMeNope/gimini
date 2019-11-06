@@ -118,43 +118,7 @@ func (w *Worktree) diffStagingWithWorktree(reverse bool) (merkletrie.Changes, er
 		return nil, err
 	}
 
-	return w.excludeIgnoredChanges(c), nil
-}
-
-func (w *Worktree) excludeIgnoredChanges(changes merkletrie.Changes) merkletrie.Changes {
-	patterns, err := gitignore.ReadPatterns(w.Filesystem, nil)
-	if err != nil {
-		return changes
-	}
-
-	patterns = append(patterns, w.Excludes...)
-
-	if len(patterns) == 0 {
-		return changes
-	}
-
-	m := gitignore.NewMatcher(patterns)
-
-	var res merkletrie.Changes
-	for _, ch := range changes {
-		var path []string
-		for _, n := range ch.To {
-			path = append(path, n.Name())
-		}
-		if len(path) == 0 {
-			for _, n := range ch.From {
-				path = append(path, n.Name())
-			}
-		}
-		if len(path) != 0 {
-			isDir := (len(ch.To) > 0 && ch.To.IsDir()) || (len(ch.From) > 0 && ch.From.IsDir())
-			if m.Match(path, isDir) {
-				continue
-			}
-		}
-		res = append(res, ch)
-	}
-	return res
+	return c, nil
 }
 
 func (w *Worktree) diffCommitWithStaging(commit plumbing.Hash, reverse bool) (merkletrie.Changes, error) {
