@@ -43,6 +43,7 @@ func main() {
 		return
 	}
 
+	// Add dir
 	hash, err := w.Add(os.Args[1])
 	if err != nil {
 		fmt.Println(err)
@@ -50,6 +51,7 @@ func main() {
 	}
 	fmt.Println(hash)
 
+	// Print status
 	status, err := w.Status()
 	if err != nil {
 		fmt.Println(err)
