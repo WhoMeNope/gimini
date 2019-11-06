@@ -100,12 +100,7 @@ func (w *Worktree) diffStagingWithWorktree(reverse bool) (merkletrie.Changes, er
 	}
 
 	from := mindex.NewRootNode(idx)
-	submodules, err := w.getSubmodulesStatus()
-	if err != nil {
-		return nil, err
-	}
-
-	to := filesystem.NewRootNode(w.Filesystem, submodules)
+	to := filesystem.NewRootNode(w.Filesystem, nil)
 
 	var c merkletrie.Changes
 	if reverse {
