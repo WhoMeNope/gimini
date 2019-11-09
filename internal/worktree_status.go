@@ -2,6 +2,8 @@ package internal
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -59,7 +61,11 @@ func (w *Worktree) status(commit plumbing.Hash) (git.Status, error) {
 		return nil, err
 	}
 
+	fmt.Println(len(right))
+
 	for _, ch := range right {
+		fmt.Println(ch)
+
 		a, err := ch.Action()
 		if err != nil {
 			return nil, err
@@ -99,8 +105,19 @@ func (w *Worktree) diffStagingWithWorktree(reverse bool) (merkletrie.Changes, er
 		return nil, err
 	}
 
+	// Translate repo paths to system paths
+	repoRoot := w.Filesystem.Root()
+	for _, idx_entry := range idx.Entries {
+		idx_entry.Name = strings.TrimPrefix(idx_entry.Name, repoRoot)
+	}
+
+	fmt.Println(idx)
+
+	// Compare with system files
 	from := mindex.NewRootNode(idx)
-	to := filesystem.NewRootNode(w.Filesystem, nil)
+	fmt.Println(from.Name())
+	to := filesystem.NewRootNode(w.systemFilesystem, nil)
+	fmt.Println(to.Name())
 
 	var c merkletrie.Changes
 	if reverse {
@@ -108,6 +125,8 @@ func (w *Worktree) diffStagingWithWorktree(reverse bool) (merkletrie.Changes, er
 	} else {
 		c, err = merkletrie.DiffTree(from, to, diffTreeIsEquals)
 	}
+
+	fmt.Println(c)
 
 	if err != nil {
 		return nil, err
