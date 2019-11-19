@@ -36,6 +36,18 @@ func GetWorktree(repo *Repository) (Worktree, error) {
 }
 
 func (w *Worktree) Add(path string) (plumbing.Hash, error) {
+	// check if path exists
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return plumbing.ZeroHash, err
+	}
+
+  // save to config
+  err := w.repo.config.add(path)
+	if err != nil {
+		return plumbing.ZeroHash, err
+	}
+
+  // add to worktree
 	s, err := w.Status()
 	if err != nil {
 		return plumbing.ZeroHash, err

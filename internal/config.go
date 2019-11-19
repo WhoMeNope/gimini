@@ -69,6 +69,24 @@ func (c *config) save () error {
   return ioutil.WriteFile(fullConfigPath, data, 0644)
 }
 
+func (c *config) add (path string) error {
+  if isInSlice(c.Paths, path) {
+    return nil
+  }
+
+  c.Paths = append(c.Paths, path)
+  return c.save()
+}
+
+func isInSlice(ss []string, v string) bool {
+  for _, s := range ss {
+    if s == v {
+      return true
+    }
+  }
+  return false
+}
+
 func (c config) getFilesystemNodes(fs billy.Filesystem) ([]noder.Noder, error) {
   var nodes []noder.Noder
 
