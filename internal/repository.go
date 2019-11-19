@@ -13,13 +13,14 @@ import (
 const repo string = "/.gimini"
 
 func OpenOrInit() (*git.Repository, error) {
+  // construct repo path
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
 	repoPath := home + repo
 
-	// Init if does not exist
+	// init repo if does not exist
 	os.MkdirAll(repoPath, os.ModeDir|0777)
 	fs := osfs.New(repoPath)
 	st := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
@@ -27,11 +28,19 @@ func OpenOrInit() (*git.Repository, error) {
 	if err != nil && err != git.ErrRepositoryAlreadyExists {
 		return nil, err
 	}
-	// Open the repo
+	// open the repo
 	repo, err = git.PlainOpen(repoPath)
 	if err != nil {
 		return nil, err
 	}
+
+  // get config
+  config, err := getConfig()
+	if err != nil {
+		return nil, err
+	}
+
+  config.save()
 
   return repo, nil
 }
