@@ -87,11 +87,12 @@ func isInSlice(ss []string, v string) bool {
   return false
 }
 
-func (c config) getFilesystemNodes(fs billy.Filesystem) ([]noder.Noder, error) {
-  var nodes []noder.Noder
+func (c *config) getFilesystemNodes(fs billy.Filesystem) map[string]noder.Noder {
+  nodeMap := make(map[string]noder.Noder)
 
-	to := filesystem.NewRootNode(osfs.New("/"), nil)
-  nodes = append(nodes, to)
+  for _, path := range c.Paths {
+    nodeMap[path] = filesystem.NewRootNode(osfs.New(path), nil)
+  }
 
-  return nodes, nil
+  return nodeMap
 }
