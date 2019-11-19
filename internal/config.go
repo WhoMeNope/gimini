@@ -3,6 +3,7 @@ package internal
 import (
   "os"
   "io/ioutil"
+  "path/filepath"
 
   "gopkg.in/yaml.v2"
 
@@ -70,6 +71,8 @@ func (c *config) save () error {
 }
 
 func (c *config) add (path string) error {
+  path = filepath.Clean(path)
+
   if isInSlice(c.Paths, path) {
     return nil
   }
