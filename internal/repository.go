@@ -10,26 +10,32 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/cache"
 )
 
-const repo string = "/.gimini"
+const repoPath string = "/.gimini"
 
-func OpenOrInit() (*git.Repository, error) {
+type Repository struct {
+  git.Repository
+
+  config config
+}
+
+func OpenOrInit() (*Repository, error) {
   // construct repo path
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
-	repoPath := home + repo
+	repoPathFull := home + repoPath
 
 	// init repo if does not exist
-	os.MkdirAll(repoPath, os.ModeDir|0777)
-	fs := osfs.New(repoPath)
+	os.MkdirAll(repoPathFull, os.ModeDir|0777)
+	fs := osfs.New(repoPathFull)
 	st := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
-	repo, err := git.Init(st, fs)
+	plainRepo, err := git.Init(st, fs)
 	if err != nil && err != git.ErrRepositoryAlreadyExists {
 		return nil, err
 	}
 	// open the repo
-	repo, err = git.PlainOpen(repoPath)
+	plainRepo, err = git.PlainOpen(repoPathFull)
 	if err != nil {
 		return nil, err
 	}
@@ -39,9 +45,8 @@ func OpenOrInit() (*git.Repository, error) {
 	if err != nil {
 		return nil, err
 	}
-
   config.save()
 
-  return repo, nil
+  return &Repository{*plainRepo, config}, nil
 }
 

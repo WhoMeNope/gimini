@@ -19,11 +19,12 @@ import (
 
 type Worktree struct {
 	*git.Worktree
-	repo             *git.Repository
+
+	repo             *Repository
 	systemFilesystem billy.Filesystem
 }
 
-func GetWorktree(repo *git.Repository) (Worktree, error) {
+func GetWorktree(repo *Repository) (Worktree, error) {
 	fs := osfs.New("/")
 
 	worktree, err := repo.Worktree()
