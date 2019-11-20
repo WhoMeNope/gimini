@@ -2,16 +2,15 @@ package internal
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/src-d/go-git.v4/plumbing/format/index"
 	"gopkg.in/src-d/go-git.v4/utils/merkletrie"
-	"gopkg.in/src-d/go-git.v4/utils/merkletrie/filesystem"
-	mindex "gopkg.in/src-d/go-git.v4/utils/merkletrie/index"
 	"gopkg.in/src-d/go-git.v4/utils/merkletrie/noder"
+  mindex "gopkg.in/src-d/go-git.v4/utils/merkletrie/index"
 )
 
 func (w *Worktree) Status() (git.Status, error) {
@@ -56,16 +55,12 @@ func (w *Worktree) status(commit plumbing.Hash) (git.Status, error) {
 		}
 	}
 
-	right, err := w.diffStagingWithWorktree(false)
+	right, err := w.diffStagingWithWorktree()
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println(len(right))
-
 	for _, ch := range right {
-		fmt.Println(ch)
-
 		a, err := ch.Action()
 		if err != nil {
 			return nil, err
@@ -99,7 +94,7 @@ func nameFromAction(ch *merkletrie.Change) string {
 	return name
 }
 
-func (w *Worktree) diffStagingWithWorktree(reverse bool) (merkletrie.Changes, error) {
+func (w *Worktree) diffStagingWithWorktree() (merkletrie.Changes, error) {
 	idx, err := w.repo.Storer.Index()
 	if err != nil {
 		return nil, err
@@ -111,28 +106,29 @@ func (w *Worktree) diffStagingWithWorktree(reverse bool) (merkletrie.Changes, er
 		idx_entry.Name = strings.TrimPrefix(idx_entry.Name, repoRoot)
 	}
 
-	fmt.Println(idx)
-
 	// Compare with system files
-	from := mindex.NewRootNode(idx)
-	fmt.Println(from.Name())
-	to := filesystem.NewRootNode(w.systemFilesystem, nil)
-	fmt.Println(to.Name())
+  paths := w.repo.config.Paths
+	pathNodeMap := w.repo.config.getFilesystemNodes(w.systemFilesystem)
 
-	var c merkletrie.Changes
-	if reverse {
-		c, err = merkletrie.DiffTree(to, from, diffTreeIsEquals)
-	} else {
-		c, err = merkletrie.DiffTree(from, to, diffTreeIsEquals)
-	}
+  pathIndexMap := make(map[string]*index.Index)
+  for _, prefix := range paths {
+    pathIndexMap[prefix] = &index.Index{}
+  }
 
-	fmt.Println(c)
+  var changes merkletrie.Changes
+  for _, prefix := range paths {
+    from := mindex.NewRootNode(pathIndexMap[prefix])
+    to := pathNodeMap[prefix]
 
-	if err != nil {
-		return nil, err
-	}
+    c, err := merkletrie.DiffTree(from, to, diffTreeIsEquals)
+    if err != nil {
+      return nil, err
+    }
 
-	return c, nil
+    changes = append(changes, c...)
+  }
+
+	return changes, nil
 }
 
 func (w *Worktree) diffCommitWithStaging(commit plumbing.Hash, reverse bool) (merkletrie.Changes, error) {
