@@ -3,6 +3,7 @@ package internal
 import (
 	"bytes"
 	"strings"
+  "fmt"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -31,29 +32,29 @@ func (w *Worktree) Status() (git.Status, error) {
 func (w *Worktree) status(commit plumbing.Hash) (git.Status, error) {
 	s := make(git.Status)
 
-	left, err := w.diffCommitWithStaging(commit, false)
-	if err != nil {
-		return nil, err
-	}
+	// left, err := w.diffCommitWithStaging(commit, false)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	for _, ch := range left {
-		a, err := ch.Action()
-		if err != nil {
-			return nil, err
-		}
+	// for _, ch := range left {
+	// 	a, err := ch.Action()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		fs := s.File(nameFromAction(&ch))
-		fs.Worktree = git.Unmodified
+	// 	fs := s.File(nameFromAction(&ch))
+	// 	fs.Worktree = git.Unmodified
 
-		switch a {
-		case merkletrie.Delete:
-			s.File(ch.From.String()).Staging = git.Deleted
-		case merkletrie.Insert:
-			s.File(ch.To.String()).Staging = git.Added
-		case merkletrie.Modify:
-			s.File(ch.To.String()).Staging = git.Modified
-		}
-	}
+	// 	switch a {
+	// 	case merkletrie.Delete:
+	// 		s.File(ch.From.String()).Staging = git.Deleted
+	// 	case merkletrie.Insert:
+	// 		s.File(ch.To.String()).Staging = git.Added
+	// 	case merkletrie.Modify:
+	// 		s.File(ch.To.String()).Staging = git.Modified
+	// 	}
+	// }
 
 	right, err := w.diffStagingWithWorktree()
 	if err != nil {
@@ -106,6 +107,8 @@ func (w *Worktree) diffStagingWithWorktree() (merkletrie.Changes, error) {
 		idx_entry.Name = strings.TrimPrefix(idx_entry.Name, repoRoot)
 	}
 
+  fmt.Println(idx)
+
 	// Compare with system files
   paths := w.repo.config.Paths
 	pathNodeMap := w.repo.config.getFilesystemNodes(w.systemFilesystem)
@@ -113,12 +116,23 @@ func (w *Worktree) diffStagingWithWorktree() (merkletrie.Changes, error) {
   pathIndexMap := make(map[string]*index.Index)
   for _, prefix := range paths {
     pathIndexMap[prefix] = &index.Index{}
+
+    for _, idx_entry := range idx.Entries {
+      if strings.HasPrefix(idx_entry.Name, prefix) {
+        pathIndexMap[prefix].Entries = append(pathIndexMap[prefix].Entries, idx_entry)
+      }
+    }
   }
 
   var changes merkletrie.Changes
   for _, prefix := range paths {
+    fmt.Println(prefix)
+
     from := mindex.NewRootNode(pathIndexMap[prefix])
     to := pathNodeMap[prefix]
+
+    fmt.Println(from.Name)
+    fmt.Println(to.Name)
 
     c, err := merkletrie.DiffTree(from, to, diffTreeIsEquals)
     if err != nil {
