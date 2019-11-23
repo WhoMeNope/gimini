@@ -24,6 +24,10 @@ type Worktree struct {
 	systemFilesystem billy.Filesystem
 }
 
+func (w *Worktree) Repo() (*Repository) {
+  return w.repo
+}
+
 func GetWorktree(repo *Repository) (Worktree, error) {
 	fs := osfs.New("/")
 
