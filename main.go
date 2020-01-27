@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-  "time"
+	"time"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -12,8 +12,8 @@ import (
 )
 
 func main() {
-  // Open repo (init if does not exist)
-  repo, err := internal.OpenOrInit()
+	// Open repo (init if does not exist)
+	repo, err := internal.OpenOrInit()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -33,30 +33,30 @@ func main() {
 	}
 	fmt.Println(hash)
 
-  // Commit
-  hash, err = w.Commit("Commit msg", &git.CommitOptions{
-    Author: &object.Signature{
-      Name: "gimini",
-      Email: "gimini@acme.com",
-      When: time.Now(),
-    },
-  })
+	// Commit
+	hash, err = w.Commit("Commit message", &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "gimini",
+			Email: "gimini@acme.com",
+			When:  time.Now(),
+		},
+	})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println(hash)
 
-  // Get commit
-  commit, err := object.GetCommit(w.Repo().Storer, hash)
+	// Get commit
+	commit, err := object.GetCommit(w.Repo().Storer, hash)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println(commit)
 
-  // Get tree
-  tree, err := object.GetTree(w.Repo().Storer, commit.TreeHash)
+	// Get tree
+	tree, err := object.GetTree(w.Repo().Storer, commit.TreeHash)
 	if err != nil {
 		fmt.Println(err)
 		return
