@@ -1,101 +1,101 @@
 package internal
 
 import (
-  "os"
-  "io/ioutil"
-  "path/filepath"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 
-  "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 
-  "gopkg.in/src-d/go-git.v4/utils/merkletrie/filesystem"
-  "gopkg.in/src-d/go-git.v4/utils/merkletrie/noder"
+	"gopkg.in/src-d/go-git.v4/utils/merkletrie/filesystem"
+	"gopkg.in/src-d/go-git.v4/utils/merkletrie/noder"
 )
 
 const configPath string = "/.gimini/gimini.yaml"
 
 type config struct {
-  Paths []string
+	Paths []string
 }
 
-func defaultConfig () config {
-  config := config{}
-  return config
+func defaultConfig() config {
+	config := config{}
+	return config
 }
 
-func getConfig () (config, error) {
-  config := config{}
+func getConfig() (config, error) {
+	config := config{}
 
-  // construct full path
+	// construct full path
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return config, err
 	}
 	fullConfigPath := home + configPath
 
-  // read file
-  data, err := ioutil.ReadFile(fullConfigPath)
-  if os.IsNotExist(err) {
-    // create default
-    config, err = defaultConfig(), nil
-  } else if err != nil {
-    return config, err
-  } else {
-    // unmarshall
-    err = yaml.Unmarshal([]byte(data), &config)
-    if err != nil {
-      return config, err
-    }
-  }
+	// read file
+	data, err := ioutil.ReadFile(fullConfigPath)
+	if os.IsNotExist(err) {
+		// create default
+		config, err = defaultConfig(), nil
+	} else if err != nil {
+		return config, err
+	} else {
+		// unmarshall
+		err = yaml.Unmarshal([]byte(data), &config)
+		if err != nil {
+			return config, err
+		}
+	}
 
-  return config, nil
+	return config, nil
 }
 
-func (c *config) save () error {
-  // construct full path
+func (c *config) save() error {
+	// construct full path
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 	fullConfigPath := home + configPath
 
-  // marshal to yaml
-  data, err := yaml.Marshal(c)
-  if err != nil {
-    return err
-  }
+	// marshal to yaml
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
 
-  return ioutil.WriteFile(fullConfigPath, data, 0644)
+	return ioutil.WriteFile(fullConfigPath, data, 0644)
 }
 
-func (c *config) add (path string) error {
-  path = filepath.Clean(path)
+func (c *config) add(path string) error {
+	path = filepath.Clean(path)
 
-  if isInSlice(c.Paths, path) {
-    return nil
-  }
+	if isInSlice(c.Paths, path) {
+		return nil
+	}
 
-  c.Paths = append(c.Paths, path)
-  return c.save()
+	c.Paths = append(c.Paths, path)
+	return c.save()
 }
 
 func isInSlice(ss []string, v string) bool {
-  for _, s := range ss {
-    if s == v {
-      return true
-    }
-  }
-  return false
+	for _, s := range ss {
+		if s == v {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *config) getFilesystemNodes(fs billy.Filesystem) map[string]noder.Noder {
-  nodeMap := make(map[string]noder.Noder)
+	nodeMap := make(map[string]noder.Noder)
 
-  for _, path := range c.Paths {
-    nodeMap[path] = filesystem.NewRootNode(osfs.New(path), nil)
-  }
+	for _, path := range c.Paths {
+		nodeMap[path] = filesystem.NewRootNode(osfs.New(path), nil)
+	}
 
-  return nodeMap
+	return nodeMap
 }

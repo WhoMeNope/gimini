@@ -19,6 +19,7 @@ func main() {
 		return
 	}
 
+	}
 	w, err := internal.GetWorktree(repo)
 	if err != nil {
 		fmt.Println(err)
