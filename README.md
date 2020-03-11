@@ -1,3 +1,7 @@
+Just use [git-annex](https://git-annex.branchable.com/).
+
+---
+
 # Gimini
 
 Git + 'Gemini' = Twin by git
